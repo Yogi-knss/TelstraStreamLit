@@ -68,6 +68,23 @@ def run_the_app(loaded_rf):
         processTestData(uploadfile,loaded_rf,locationId, id)
     return
 
+def converttoFaultSeverity(x):
+    stringarr = []
+    for i in x:
+        if i == 0:
+            stringarr.append("No fault")
+        elif i == 1:
+            stringarr.append("Few Faults")
+        elif i == 2:
+            stringarr.append("Many Faults")
+    return stringarr
+
+def color_survived(val):
+    color = 'red' if val=="Many Faults" else 'yellow' if val=="Few Faults" else 'green'
+    return f'background-color: {color}'
+
+
+
 def processTestData(uploadfile, loaded_rf, locationId, id):
 
 
@@ -106,9 +123,17 @@ def processTestData(uploadfile, loaded_rf, locationId, id):
             ['location', 'severity_type', 'resource_type', 'log_feature', 'event_type'], axis=1)
         #st.write(train_X)
         test_X = train_X.set_index(train_X.id).drop('id', axis=1)
-        dfProb = pd.DataFrame(loaded_rf.predict(test_X))
+        #dfProb = pd.DataFrame(loaded_rf.predict(test_X))
         #st.dataframe(dfProb)
-        st.table(dfProb)
+        dfProbArray = (loaded_rf.predict(test_X))
+        #st.dataframe(dfProb)
+        #st.table(dfProb)
+
+        dfProb = pd.DataFrame()
+        dfProb['Id'] = testdataframe['id']
+        dfProb['Location'] = testdataframe['location']
+        dfProb['Fault Severity'] = converttoFaultSeverity(dfProbArray)
+        st.table(dfProb.style.applymap(color_survived, subset=['Fault Severity']))
 
     elif locationId is not None:
         data = {'id': [id], 'location': [locationId]}
@@ -123,8 +148,8 @@ def processTestData(uploadfile, loaded_rf, locationId, id):
 
         #testdataframe.drop(testdataframe.columns[0], axis=1)
 
-        st.dataframe(testdataframe)
-        st.dataframe(eventTypedf)
+        ##st.dataframe(testdataframe)
+        #st.dataframe(eventTypedf)
 
         traineventdf = pd.merge(testdataframe, eventTypedf.drop_duplicates(subset=['id']), on='id')
         traineventseveritydf = pd.merge(traineventdf, severityTypedf.drop_duplicates(subset=['id']), how='left',
@@ -151,9 +176,23 @@ def processTestData(uploadfile, loaded_rf, locationId, id):
             ['location', 'severity_type', 'resource_type', 'log_feature', 'event_type'], axis=1)
         #st.write(train_X)
         test_X = train_X.set_index(train_X.id).drop('id', axis=1)
-        dfProb = pd.DataFrame(loaded_rf.predict(test_X))
+        dfProbArray = (loaded_rf.predict(test_X))
         #st.dataframe(dfProb)
-        st.table(dfProb)
+        #st.table(dfProb)
+        dfProb = pd.DataFrame()
+        dfProb['Id'] = data['id']
+        dfProb['Location'] = data['location']
+        dfProb['Fault Severity'] = converttoFaultSeverity(dfProbArray)
+        st.table(dfProb.style.applymap(color_survived, subset=['Fault Severity']))
+
+
+
+        #dfProb = pd.DataFrame((converttoFaultSeverity(dfProbArray)))
+
+        #dfProb['id'] = data['id']
+        #dfProb['location'] = data['location']
+
+        #st.table(dfProb)
 
 if __name__ == "__main__":
     main()
