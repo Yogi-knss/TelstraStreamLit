@@ -6,12 +6,16 @@ import urllib
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
-
+#from PIL import Image
 
 def load_weights_buildModel():
+    st.progress(1)
     st.text("Loading Random Forest Weights ....... ")
+    #image = Image.open('loading.jpg')
+    #st.image(image, "Loading")
     loaded_rf = joblib.load("random_forest.joblib")
     st.text("Random Forest Model loaded ....... ")
+    st.progress(100)
 
 
 def main():
@@ -23,7 +27,11 @@ def main():
      #   download_file(filename)
     #load_weights_buildModel()
     st.text("Loading Random Forest Weights ....... ")
+    st.progress(1)
+    #image = Image.open('loading.jpg')
+    #st.image(image, "Loading")
     loaded_rf = joblib.load("random_forest.joblib")
+    st.progress(100)
     st.text("Random Forest Model loaded ....... ")
 
     # Once we have the dependencies, add a selector for the app mode on the sidebar.
@@ -56,16 +64,30 @@ def run_the_app(loaded_rf):
     uploadfile = None
     locationId = None
     id = None
+    resuourceType = None
+    severityType = None
+    featureType = None
+    volume = None
+    eventType = None
+
     if selectoption == "Single Location":
+        provideAll = st.checkbox("Provide all details")
         locationId = st.text_input("Enter location details: ", key="Locationid")
         id = st.text_input("Enter Id: ", key="id")
+        if provideAll:
+            eventType = st.text_input("Enter Event Type details: ", key="eventId")
+            resuourceType = st.text_input("Enter Resource Type details: ", key="resourceid")
+            severityType = st.text_input("Enter Severity Type details: ", key="severityid")
+            featureType = st.text_input("Enter Log Feature Type details: ", key="featureid")
+            volume = st.text_input("Enter Log Volume details: ", key="volumeid")
+
 
     elif selectoption == "Multiple Location":
         uploadfile = st.file_uploader("Upload CSV")
     #st.button("Submit")
 
     if st.button("Submit"):
-        processTestData(uploadfile,loaded_rf,locationId, id)
+        processTestData(uploadfile,loaded_rf,locationId, id, resuourceType, severityType, featureType, volume, eventType)
     return
 
 def converttoFaultSeverity(x):
@@ -85,7 +107,7 @@ def color_survived(val):
 
 
 
-def processTestData(uploadfile, loaded_rf, locationId, id):
+def processTestData(uploadfile, loaded_rf, locationId, id, resuourceType, severityType, featureType, volume, eventType):
 
 
     if uploadfile is not None:
@@ -138,25 +160,28 @@ def processTestData(uploadfile, loaded_rf, locationId, id):
     elif locationId is not None:
         data = {'id': [id], 'location': [locationId]}
         testdataframe = pd.DataFrame(data)
-
         testdataframe['id'] = testdataframe['id'].astype(int)
-        eventTypedf = pd.read_csv("event_type.csv")
-        severityTypedf = pd.read_csv("severity_type.csv")
-        featuresTypedf = pd.read_csv("log_feature.csv")
-        eventTypedf = pd.read_csv("event_type.csv")
-        resourcedf = pd.read_csv("resource_type.csv")
+        if (len(resuourceType) >0 and len(severityType)>0 and len(featureType)>0 and len(volume)>0 and len(eventType) >0) :
+            st.text("All details provided, cosiderin the provided inputs")
+            #, , featureType, volume,
+            data = {'id': [id], 'location': [locationId], 'resource_type':[resuourceType], 'severity_type': [severityType], 'log_feature': [featureType], 'volume':[volume], 'event_type':[eventType]}
+            traineventseverityFeaturesResourcesdf = pd.DataFrame(data)
+            traineventseverityFeaturesResourcesdf['id'] = traineventseverityFeaturesResourcesdf['id'].astype(int)
+            traineventseverityFeaturesResourcesdf['volume'] = traineventseverityFeaturesResourcesdf['volume'].astype(int)
 
-        #testdataframe.drop(testdataframe.columns[0], axis=1)
-
-        ##st.dataframe(testdataframe)
-        #st.dataframe(eventTypedf)
-
-        traineventdf = pd.merge(testdataframe, eventTypedf.drop_duplicates(subset=['id']), on='id')
-        traineventseveritydf = pd.merge(traineventdf, severityTypedf.drop_duplicates(subset=['id']), how='left',
+        else:
+            st.text("Details are missing and hence considering the train data for inference")
+            eventTypedf = pd.read_csv("event_type.csv")
+            severityTypedf = pd.read_csv("severity_type.csv")
+            featuresTypedf = pd.read_csv("log_feature.csv")
+            eventTypedf = pd.read_csv("event_type.csv")
+            resourcedf = pd.read_csv("resource_type.csv")
+            traineventdf = pd.merge(testdataframe, eventTypedf.drop_duplicates(subset=['id']), on='id')
+            traineventseveritydf = pd.merge(traineventdf, severityTypedf.drop_duplicates(subset=['id']), how='left',
                                         on='id')
-        traineventseverityFeaturesdf = pd.merge(traineventseveritydf, featuresTypedf.drop_duplicates(subset=['id']),
+            traineventseverityFeaturesdf = pd.merge(traineventseveritydf, featuresTypedf.drop_duplicates(subset=['id']),
                                                 how='left', on='id')
-        traineventseverityFeaturesResourcesdf = pd.merge(traineventseverityFeaturesdf,
+            traineventseverityFeaturesResourcesdf = pd.merge(traineventseverityFeaturesdf,
                                                          resourcedf.drop_duplicates(subset=['id']), how='left', on='id')
         lb = LabelEncoder()
 
@@ -184,8 +209,6 @@ def processTestData(uploadfile, loaded_rf, locationId, id):
         dfProb['Location'] = data['location']
         dfProb['Fault Severity'] = converttoFaultSeverity(dfProbArray)
         st.table(dfProb.style.applymap(color_survived, subset=['Fault Severity']))
-
-
 
         #dfProb = pd.DataFrame((converttoFaultSeverity(dfProbArray)))
 
