@@ -69,6 +69,7 @@ def run_the_app(loaded_rf):
     featureType = None
     volume = None
     eventType = None
+    provideAll = False
 
     if selectoption == "Single Location":
         provideAll = st.checkbox("Provide all details")
