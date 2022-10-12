@@ -87,7 +87,7 @@ def run_the_app(loaded_rf):
     #st.button("Submit")
 
     if st.button("Submit"):
-        processTestData(uploadfile,loaded_rf,locationId, id, resuourceType, severityType, featureType, volume, eventType)
+        processTestData(uploadfile,loaded_rf,locationId, id, resuourceType, severityType, featureType, volume, eventType, provideAll)
     return
 
 def converttoFaultSeverity(x):
@@ -107,7 +107,7 @@ def color_survived(val):
 
 
 
-def processTestData(uploadfile, loaded_rf, locationId, id, resuourceType, severityType, featureType, volume, eventType):
+def processTestData(uploadfile, loaded_rf, locationId, id, resuourceType, severityType, featureType, volume, eventType, processTestData):
 
 
     if uploadfile is not None:
@@ -161,7 +161,7 @@ def processTestData(uploadfile, loaded_rf, locationId, id, resuourceType, severi
         data = {'id': [id], 'location': [locationId]}
         testdataframe = pd.DataFrame(data)
         testdataframe['id'] = testdataframe['id'].astype(int)
-        if (len(resuourceType) >0 and len(severityType)>0 and len(featureType)>0 and len(volume)>0 and len(eventType) >0) :
+        if (processTestData and len(resuourceType) >0 and len(severityType)>0 and len(featureType)>0 and len(volume)>0 and len(eventType) >0) :
             st.text("All details provided, cosiderin the provided inputs")
             #, , featureType, volume,
             data = {'id': [id], 'location': [locationId], 'resource_type':[resuourceType], 'severity_type': [severityType], 'log_feature': [featureType], 'volume':[volume], 'event_type':[eventType]}
